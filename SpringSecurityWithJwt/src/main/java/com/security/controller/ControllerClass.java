@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.security.config.JwtService;
 import com.security.config.MyUserDetailasService;
+import com.security.custom_exceptions.UnAuthorizedExceptionCls;
 import com.security.dto.Login;
 import com.security.entity.Student;
 import com.security.service.StudentService;
@@ -60,25 +62,32 @@ public class ControllerClass {
 	/* this authenticate user first after it genarates jwt_token */
 	@PostMapping("/authenticate")
 	public String authenticateUser(@RequestBody Login login) {
-		log.info("entered...");
+		//log.info("entered...");
+		try {
 		/* Authenticate the user here */
 		Authentication authenticate = authenticationManager
 				.authenticate(new UsernamePasswordAuthenticationToken(login.getStudentName(), login.getPassword()));
-
-		log.info("second step");
+		
+		
+		
 		/*
 		 * if authenticate is true then we called here token genaration method for token
 		 */
 		if (authenticate.isAuthenticated()) {
+			log.info("if block");
 			return jwtService.genarateJwtToken(myUserDetailasService.loadUserByUsername(login.getStudentName()));
 
 		}
 		
 		/* if not valid throw exception */
 		else {
-			throw new UsernameNotFoundException("username not found give valid user credintials pls!!");
+			log.info("else block");
+			throw new UnAuthorizedExceptionCls("Invalid Credintials!!!");
 		}
-
+		}catch (AuthenticationException ex) {
+			log.info("cath block");
+			throw new UnAuthorizedExceptionCls("Authentication failed: " + ex.getMessage());
+		}
 	}
 
 }

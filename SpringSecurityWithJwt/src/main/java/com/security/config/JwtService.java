@@ -7,14 +7,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.crypto.SecretKey;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class JwtService {
 
 	/*
@@ -29,6 +34,7 @@ public class JwtService {
 	public String genarateJwtToken(UserDetails userDetails) {
 		Map<String,String> claims =  new HashMap<>();
 		claims.put("ISS","Satya");
+		log.info("userDetails:::::::======="+userDetails.toString());
 		return Jwts.builder()
 			.claims(claims)
 			.subject(userDetails.getUsername())
@@ -45,5 +51,33 @@ public class JwtService {
 		return Keys.hmacShaKeyFor(keyBytes);
 	}
 	
+	/*This is for extract subject from the token ,for  token validation process*/
+	
+	public String getSubjectFromToken(String jwtToken) {
+		log.info("getSubjectFrom token method enetered with token  ::::"+jwtToken);
+		Claims claims = getClaims(jwtToken);
+		return claims.getSubject();
+		
+	}
+	
+	/*it extract the claims(claims means what ever there in payload in jwt token)*/
+	public Claims getClaims(String jwtToken) {
+		log.info("getClaims token method enetered with token  ::::"+jwtToken);
+		return Jwts.parser()
+				.verifyWith((SecretKey) getSignKey())
+				.build()
+				.parseSignedClaims(jwtToken)
+				.getPayload();
+		
+	}
+	
+	/*it is used for check token valid or not means checks expiration time of the token*/
+	public boolean isTokenValid(String jwtToken) {
+		log.info("isTokenValid  method enetered with token  ::::"+jwtToken);
+		Claims claims = getClaims(jwtToken);
+		
+		return claims.getExpiration().after(Date.from(Instant.now()));
+		
+	}
 	
 }
