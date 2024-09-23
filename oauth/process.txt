@@ -51,7 +51,7 @@ copy the client-d,client-secret
 use client-d,client-secret in application.properties file like below
 ------------------------------------------------------------------------------
 
-
+hey in the properties file also those oauth properties removed check (bcz some secrecy oauth ,user client-id ,server-id not allowed to store in git)
 
 
 run the project 
