@@ -1,0 +1,297 @@
+what is security
+------------------------
+
+security is nothing but protecting our data and business logic in side our application
+
+how many ways to provide security
+--------------------------------
+security to our application will be implemented different ways like using firewalls,http,ssl,authentication,authorization
+
+
+
+AUTHENTICATION  && AUTHERIZATION
+========================================
+
+1)AUTHENTICATION  
+--------------------------
+
+**
+-->Authentication is the process of knowing or verifying or identifying the identity of the user or person  
+
+-->it checks that person is correct user or not through checking provided usename and password or checking OTP etc...
+
+ex scenario:-
+<------------->
+
+-->suppose taking banking application,in order to use that application we need to login first then that means we need to provide usename & pwd or OTP etc...
+-->if those credintials are correct then only it gives permission to allow to use that applicaton
+
+
+
+
+https://github.com/venkyEidiko/federal-poc/tree/master/federal-poc-service
+
+
+
+1)AUTHERIZATION  
+--------------------------
+
+-->Autherization is the process after Authentication done it checks authority
+-->it checks that logined person have authority to do that specific action or not ,he have authority to do that operation or not etc......
+-->it check the persmissions that person have or not to do that specific action
+ 
+ex scenario:-
+<------------->
+
+-->same banking application example ,after login that person,the manager can do all the actions in the aplication but the clerk and user no authority to do all the action
+
+
+
+
+
+Execution of Security work flow
+====================================
+
+
+
+
+
+		Authentication
+			|
+			|
+                        |
+user
+ request        <--->Authentication           <--->AuthenticationManager   <-->AuthenticationProvider
+                        Filter
+                        |                                                           |         | 
+			|		  	                                    |         | 
+			|		                                UserDetailsService   PasswordEncoer
+	      Security Context
+
+
+
+
+Explanation
+--------------------
+-->After user enter username & pwd and trigger the  request
+-->It comes to AuthenticationFilter 
+-->AuthenticationFilter forwarded to Authentication
+-->Authentication takes that username & pwd values it converts or it forms a object
+-->and it returns to AuthenticationFilter ,and AuthenticationFilter passess  that object to AuthenticationManager
+-->AuthenticationManager passes that details or object to the AuthenticationProvider
+-->AuthenticationProvider uses  UserDetailsService & PasswordEncoer to authenticate
+-->and returns authentication result to AuthenticationFilter 
+-->if the result (provided details ) correct then those detials set to   Security Context
+
+
+
+
+
+1)AuthenticationFilter 
+------------------------
+a filter that intercepts and perfroms authentication of a particular request by delegating it to the authentication manager.if the authentication
+is successfull,then authentication details set to the SecurityContext
+
+
+2)Authentication
+--------------------
+Using  the supllied values from the user like username and password,the authentication will be formed which will be given as an input to 
+the AuthenticationManager Interface
+
+3)AuthenticationManager 
+-------------------------------
+-->Once receive the requestfrom filter it delegates the validating the user details to the AuthenticationProvider.
+
+4)AuthenticationProvider
+------------------------------
+-->It has the all the logic to validate the user details  Using  UserDetailsService & PasswordEncoer
+
+
+
+For Security Feature In our Application we need to add Spring security dependency in our pom.xml
+---------------------------------------------------------------------------------------------------------
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+
+
+-->after added this dependency our application got secured 
+-->if we trigger request then it will ask username & password
+-->the default username is "user",and password will automatically generated and printed on the console =>we can use both to allowed to acess the apllication
+
+-->we can give our own username and password
+       -->for that we need specify usename & password in  the application.properties file 
+		
+		#security configurations(giving own username and pwd for authenticate)
+		spring.security.user.name=varam
+		spring.security.user.password=1234
+
+
+
+
+
+
+Three Mechanisms for providing security to our Application
+===================================================================
+
+1)Basic Authentication
+2)Jwt Authentication
+3)OAuth Authentication
+
+
+1)Basic Authentication
+-------------------------------------
+-->in basic authentication we need to add spring security dependency (chooce spring security starter while creating the spring boot project)
+-->defaultely spring security give security to our application 
+-->in defaulty if we trigger any url it asks username and password
+-->the default username is  = user   and default password will be prints on console
+-->we can also  provide our own username and password in  the application.propertiles file
+-->if multiple users are there then we can store all that usernames and password ,so for that spring gives us InMemoryUserDetailsManager 
+-->we can bring username and password from database for authentication also (it is dynamic,the above is hardcoding username,password's)
+
+
+-->the below code is customises security to our application
+	-->create one package(com.studentCrud.securityConfig)in that create a cls(SecurityConfig ) make an annotation(@Configuration) write code (as below)
+
+
+//in the below code above all the points were covered
+
+package com.studentCrud.securityConfig;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+import static org.springframework.security.config.Customizer.withDefaults;
+
+//for customized spring security instead of default security we here write the code 
+
+@Configuration
+public class SecurityConfig 
+{
+//this PasswordEncoder-->the AuthenicationProvider uses PasswordEncoder and UserDetailsService to authenticate
+	@Bean
+	public PasswordEncoder pwdEncoder() {
+		return new BCryptPasswordEncoder();
+		
+	}
+
+	
+//this UserDetailsService-->the AuthenicationProvider uses PasswordEncoder and UserDetailsService to authenticate	
+	@Bean
+	public UserDetailsService userDetailsService()
+	{
+		UserDetails adminUser  = User.withUsername("admin")
+				.password(pwdEncoder().encode("admin"))
+				.roles("ADMIN")
+				.build();
+		
+		
+		UserDetails userUser  = User.withUsername("user")
+				.password(pwdEncoder().encode("user"))
+				.roles("USER")
+				.build();
+		
+		
+		return new InMemoryUserDetailsManager(userUser,adminUser);
+				
+		
+	}
+	
+	
+	
+	
+	
+//1. first this practiced	
+//this code is all the url's are authenticate means all the url's requests are asks username and password
+	/*
+	@Bean
+    SecurityFilterChain  securityFilterChain(HttpSecurity http)throws Exception
+	{
+        http.csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
+                .formLogin(Customizer.withDefaults())
+                .httpBasic(Customizer.withDefaults());
+	 
+	return  http.build();
+    }
+	*/
+
+//2. second this practiced	
+//this code is only save and getSpecific/** url only authenticate means those url request asks username and pwd
+	/*
+	@Bean
+	SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity)throws Exception {
+
+        httpSecurity.csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers("/save")
+                        .authenticated()
+                        .requestMatchers("/getSpecific/**")
+                        .authenticated()
+                        .anyRequest()
+                        .permitAll())
+                .formLogin(withDefaults())
+                .httpBasic(withDefaults());
+		
+		
+         return httpSecurity.build();
+	}
+	*/
+	
+	
+//3. THIRD this practiced	
+//this code is regarding role based giving access
+//here ADMNIN only can save && and user can only see getSpecific/** 
+//the remaining url's any one can access
+	
+//NOTE= we can also use annotation instead of hasRole using like below 
+		//for that comment this  .hasRole("ADMIN"), .hasRole("USER") add authenticated() like above commented code(sec practiced)   or comment this whole code and un comment 2nd practiced code
+		//add @EnableMethodSecurity annotation at this class SecurityConfig cls
+		//and in the conteroller class ,add  @PreAuthorize("hasRole('USER')"),@PreAuthorize("hasRole('ADMIN')")
+		// at top of whcih methods you want make them access controll
+	/*
+	@Bean
+	SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity)throws Exception {
+
+        httpSecurity.csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers("/save")
+                        .hasRole("ADMIN")
+                        .requestMatchers("/getSpecific/**")
+                        .hasRole("USER")
+                        .anyRequest()
+                        .permitAll())
+                .formLogin(withDefaults())
+                .httpBasic(withDefaults());
+		
+		
+         return httpSecurity.build();
+	}
+	
+	
+	
+	
+}
+		
+
+
+
+
+JWT
+=============================
+-->Json Web Token
+-->in JWT Token Madeup of three parts = Header PlayLoad  Signature
+-->Each section is base 64 encoded and separated with .(dot)
+
+
+					
